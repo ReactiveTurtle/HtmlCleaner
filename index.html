@@ -3,6 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HTML Cleaner — Word / HTML режим</title>
+  <script src="https://cdn.jsdelivr.net/npm/diff@5.2.0/dist/diff.min.js"></script>
 <style>
 body{font-family:Inter,Segoe UI,Roboto,Arial;color:#e6eef6;background:#07101a;margin:0;padding:20px;}
 .wrap{max-width:1100px;margin:0 auto;display:grid;gap:16px;}
@@ -16,10 +17,27 @@ textarea{width:100%;min-height:120px;background:white;color:black;border:1px sol
 iframe{width:100%;height:320px;border:1px solid rgba(255,255,255,0.04);border-radius:6px;background:white;}
 .log{max-height:120px;overflow:auto;background:#021018;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.03);font-size:13px;color:#9aa4b2;}
 footer{font-size:13px;color:#9aa4b2;margin-top:12px;}
-#pasteDiv{border:1px solid gray; min-height:200px; max-height:400px; padding:5px; background:white; color:black; overflow-y:auto; overflow-x:hidden;}
+#pasteDiv{border:1px solid gray; min-height:200px; max-height:400px; padding:5px; background:white; color:black; overflow-y:auto; overflow-x:hidden; max-width: 1000px}
 .mode-switch{margin-bottom:8px;}
 .hidden{display:none;}
 @media(max-width:900px){.row{grid-template-columns:1fr;}}
+#diffResult {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #f4f4f4;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  height: 500px;
+}
+
+#diffOutput {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+#diffOutput span {
+  font-family: monospace;
+}
 </style>
 </head>
 <body>
@@ -71,6 +89,17 @@ footer{font-size:13px;color:#9aa4b2;margin-top:12px;}
 <div id="log" class="log"></div>
 </div>
 </div>
+
+<div style="margin-top:12px" class="row">
+<div class="controls">
+  <button id="compareBtn" class="btn">Сравнить тексты</button>
+</div>
+
+<div id="diffResult" class="log hidden">
+  <h3>Результат сравнения:</h3>
+  <pre id="diffOutput"></pre>
+</div>
+</div>
 </div>
 
 <footer>Локальный инструмент — вставляйте текст из Word или HTML и очищайте.</footer>
@@ -82,7 +111,6 @@ const inputEl=document.getElementById('inputHtml');
 const cleanBtn=document.getElementById('cleanBtn');
 const prettyBtn=document.getElementById('prettyBtn');
 const resetBtn=document.getElementById('resetBtn');
-const copyBtn=document.getElementById('copyBtn');
 const origFrame=document.getElementById('origFrame');
 const cleanFrame=document.getElementById('cleanFrame');
 const cleanHtmlEl=document.getElementById('cleanHtml');
@@ -193,7 +221,6 @@ prettyBtn.addEventListener('click',()=>{
 });
 
 resetBtn.addEventListener('click',()=>{pasteDiv.innerHTML=''; inputEl.value=''; cleanHtmlEl.value=''; origFrame.srcdoc=''; cleanFrame.srcdoc=''; logEl.innerHTML='';});
-copyBtn.addEventListener('click',()=>{navigator.clipboard.writeText(cleanHtmlEl.value).then(()=>alert('Очищенный HTML скопирован'));});
 
 const copyHtmlBtn=document.getElementById('copyHtmlBtn');
 const copyVisualBtn=document.getElementById('copyVisualBtn');
@@ -225,6 +252,49 @@ copyVisualBtn.addEventListener('click',()=>{
 
   sel.removeAllRanges();
   document.body.removeChild(tempDiv);
+});
+
+const compareBtn = document.getElementById('compareBtn');
+const diffResult = document.getElementById('diffResult');
+const diffOutput = document.getElementById('diffOutput');
+
+compareBtn.addEventListener('click', () => {
+  // Текст из исходного рендера
+  const originalText = origFrame.contentDocument.body.innerText;
+  // Текст из очищенного рендера
+  const cleanedText = cleanFrame.contentDocument.body.innerText;
+
+  // Сравнение построчно
+  const diff = Diff.diffLines(originalText, cleanedText);
+
+  let diffHtml = "";
+  let origLine = 1;
+  let cleanLine = 1;
+
+  diff.forEach(part => {
+    const lines = part.value.split("\n");
+    lines.forEach((line, idx) => {
+      if (!line.trim()) {
+        if (!part.added) origLine++;
+        if (!part.removed) cleanLine++;
+        return;
+      }
+
+      if (part.added) {
+        diffHtml += `<div style="color:green">[очищенный ${cleanLine}] + ${line}</div>`;
+        cleanLine++;
+      } else if (part.removed) {
+        diffHtml += `<div style="color:red">[оригинал ${origLine}] - ${line}</div>`;
+        origLine++;
+      } else {
+        origLine++;
+        cleanLine++;
+      }
+    });
+  });
+
+  diffOutput.innerHTML = diffHtml || "<i>Отличий не найдено</i>";
+  diffResult.classList.remove('hidden');
 });
 
 </script>
