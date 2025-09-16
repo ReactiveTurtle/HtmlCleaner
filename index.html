@@ -43,10 +43,11 @@ footer{font-size:13px;color:#9aa4b2;margin-top:12px;}
 </div>
 
 <div class="controls">
-<button id="cleanBtn" class="btn">Очистить</button>
+<button id="cleanBtn" class="btn">Конвертировать</button>
 <button id="prettyBtn" class="btn">Форматировать</button>
 <button id="resetBtn" class="btn">Очистить всё</button>
-<button id="copyBtn" class="btn">Копировать результат</button>
+<button id="copyHtmlBtn" class="btn">Копировать HTML</button>
+<button id="copyVisualBtn" class="btn">Копировать визуально</button>
 </div>
 
 <div style="margin-top:12px" class="row">
@@ -193,6 +194,39 @@ prettyBtn.addEventListener('click',()=>{
 
 resetBtn.addEventListener('click',()=>{pasteDiv.innerHTML=''; inputEl.value=''; cleanHtmlEl.value=''; origFrame.srcdoc=''; cleanFrame.srcdoc=''; logEl.innerHTML='';});
 copyBtn.addEventListener('click',()=>{navigator.clipboard.writeText(cleanHtmlEl.value).then(()=>alert('Очищенный HTML скопирован'));});
+
+const copyHtmlBtn=document.getElementById('copyHtmlBtn');
+const copyVisualBtn=document.getElementById('copyVisualBtn');
+
+copyHtmlBtn.addEventListener('click',()=>{
+  navigator.clipboard.writeText(cleanHtmlEl.value).then(()=>alert('Очищенный HTML скопирован'));
+});
+
+copyVisualBtn.addEventListener('click',()=>{
+  // Создаём временный div и клонируем содержимое очищенного iframe
+  const tempDiv=document.createElement('div');
+  tempDiv.innerHTML=cleanFrame.contentDocument.body.innerHTML;
+  tempDiv.style.position='absolute';
+  tempDiv.style.left='-9999px';
+  document.body.appendChild(tempDiv);
+
+  const range=document.createRange();
+  range.selectNodeContents(tempDiv);
+  const sel=window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  try{
+    document.execCommand('copy');
+    alert('Визуальный контент скопирован!');
+  }catch(e){
+    alert('Ошибка при копировании визуального контента');
+  }
+
+  sel.removeAllRanges();
+  document.body.removeChild(tempDiv);
+});
+
 </script>
 </body>
 </html>
