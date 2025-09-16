@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="128" height="128" fill="none" stroke="currentColor" stroke-width="2">
+  <!-- Метла -->
+  <path d="M4 20c4-6 12-6 16 0" stroke="orange"/>
+  <path d="M12 2v10" stroke="brown"/>
+  <path d="M8 12h8" stroke="brown"/>
+  
+  <!-- HTML теги -->
+  <polyline points="6 4 2 8 6 12" stroke="blue"/>
+  <polyline points="18 4 22 8 18 12" stroke="blue"/>
+</svg>
