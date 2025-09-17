@@ -1,303 +1,317 @@
 <html lang="ru">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="icon" type="image/svg+xml" href="icon.svg">
-<title>HTML Cleaner — Word / HTML режим</title>
-  <script src="https://cdn.jsdelivr.net/npm/diff@5.2.0/dist/diff.min.js"></script>
-<style>
-body{font-family:Inter,Segoe UI,Roboto,Arial;color:#e6eef6;background:#07101a;margin:0;padding:20px;}
-.wrap{max-width:1100px;margin:0 auto;display:grid;gap:16px;}
-header{display:flex;align-items:center;gap:12px;}
-h1{margin:0;font-size:18px;}
-.panel{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.03);padding:12px;border-radius:10px;}
-textarea{width:100%;min-height:120px;background:white;color:black;border:1px solid rgba(0,0,0,0.1);padding:10px;border-radius:6px;font-family:monospace;font-size:13px;resize:vertical;}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.btn{background:#38bdf8;border:none;color:#04202a;padding:10px 12px;border-radius:8px;cursor:pointer;}
-.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;}
-iframe{width:100%;height:320px;border:1px solid rgba(255,255,255,0.04);border-radius:6px;background:white;}
-.log{max-height:120px;overflow:auto;background:#021018;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.03);font-size:13px;color:#9aa4b2;}
-footer{font-size:13px;color:#9aa4b2;margin-top:12px;}
-#pasteDiv{border:1px solid gray; min-height:200px; max-height:400px; padding:5px; background:white; color:black; overflow-y:auto; overflow-x:hidden; max-width: 1000px}
-.mode-switch{margin-bottom:8px;}
-.hidden{display:none;}
-@media(max-width:900px){.row{grid-template-columns:1fr;}}
-#diffResult {
-  margin-top: 20px;
-  padding: 10px;
-  background-color: #f4f4f4;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  height: 500px;
-}
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<link rel="icon" type="image/svg+xml" href="icon.svg" />
+		<title>HTML Cleaner — Word / HTML режим</title>
+		<script src="https://cdn.jsdelivr.net/npm/diff@5.2.0/dist/diff.min.js"></script>
+		<style>
+			body{font-family:Inter,Segoe UI,Roboto,Arial;color:#e6eef6;background:#07101a;margin:0;padding:20px;}
+			.wrap{max-width:1100px;margin:0 auto;display:grid;gap:16px;}
+			header{display:flex;align-items:center;gap:12px;}
+			h1{margin:0;font-size:18px;}
+			.panel{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.03);padding:12px;border-radius:10px;}
+			textarea{width:100%;min-height:150px;;background:white;color:black;border:1px solid rgba(0,0,0,0.1);padding:10px;border-radius:6px;font-family:monospace;font-size:13px;resize:vertical;}
+			.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+			.btn{background:#38bdf8;border:none;color:#04202a;padding:10px 12px;border-radius:8px;cursor:pointer;}
+			.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;}
+			iframe{width:100%;height:320px;border:1px solid rgba(255,255,255,0.04);border-radius:6px;background:white;}
+			.log{max-height:120px;overflow:auto;background:#021018;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.03);font-size:13px;color:#9aa4b2;}
+			footer{font-size:13px;color:#9aa4b2;margin-top:12px;}
+			#pasteDiv{
+				border:1px solid gray;
+				background:white;
+				color:black;
+				overflow-y:auto;
+				overflow-x:hidden;
+				width: 100%
+			}
+			#pasteDiv, #inputHtml {
+				min-height:300px;
+				max-height:300px;
+				padding:5px;
+			}
+			.mode-switch{margin-bottom:8px;}
+			.hidden{display:none;}
+			@media(max-width:900px){.row{grid-template-columns:1fr;}}
+			#diffResult {
+			  margin-top: 20px;
+			  padding: 10px;
+			  background-color: #f4f4f4;
+			  border: 1px solid #ccc;
+			  border-radius: 5px;
+			  height: 500px;
+			}
 
-#diffOutput {
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
+			#diffOutput {
+			  white-space: pre-wrap;
+			  word-wrap: break-word;
+			}
 
-#diffOutput span {
-  font-family: monospace;
-}
-</style>
-</head>
-<body>
-<div class="wrap">
-<header><h1>HTML Cleaner — Word / HTML режим</h1></header>
+			#diffOutput span {
+			  font-family: monospace;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="wrap">
+			<header><h1>HTML Cleaner — Word / HTML режим</h1></header>
 
-<div class="panel">
-<div class="mode-switch">
-<label><input type="radio" name="mode" value="word" checked> Вставка Word</label>
-<label style="margin-left:12px;"><input type="radio" name="mode" value="html"> Вставка HTML</label>
-</div>
+			<div class="panel">
+				<div class="mode-switch">
+					<label><input type="radio" name="mode" value="word" checked /> Вставка Word</label>
+					<label style="margin-left:12px;"><input type="radio" name="mode" value="html" /> Вставка HTML</label>
+				</div>
 
-<div id="wordMode">
-<label style="font-size:13px;color:#9aa4b2">Вставьте текст из Word сюда</label>
-<div id="pasteDiv" contentEditable="true"></div>
-</div>
+				<div id="wordMode">
+					<label style="font-size:13px;color:#9aa4b2">Вставьте текст из Word сюда</label>
+					<div id="pasteDiv" contenteditable="true"></div>
+				</div>
 
-<div id="htmlMode" class="hidden">
-<label style="font-size:13px;color:#9aa4b2">Вставьте HTML сюда</label>
-<textarea id="inputHtml"></textarea>
-</div>
+				<div id="htmlMode" class="hidden">
+					<label style="font-size:13px;color:#9aa4b2">Вставьте HTML сюда</label>
+					<textarea id="inputHtml"></textarea>
+				</div>
 
-<div class="controls">
-<button id="cleanBtn" class="btn">Конвертировать</button>
-<button id="prettyBtn" class="btn">Форматировать</button>
-<button id="resetBtn" class="btn">Очистить всё</button>
-<button id="copyHtmlBtn" class="btn">Копировать HTML</button>
-<button id="copyVisualBtn" class="btn">Копировать визуально</button>
-</div>
+				<div class="controls">
+					<button id="cleanBtn" class="btn">Конвертировать</button>
+					<button id="prettyBtn" class="btn">Форматировать</button>
+					<button id="resetBtn" class="btn">Очистить всё</button>
+				</div>
 
-<div style="margin-top:12px" class="row">
-<div>
-<label style="font-size:13px;color:#9aa4b2">Рендер — исходный HTML</label>
-<iframe id="origFrame" title="original render"></iframe>
-</div>
-<div>
-<label style="font-size:13px;color:#9aa4b2">Рендер — очищенный HTML</label>
-<iframe id="cleanFrame" title="clean render"></iframe>
-</div>
-</div>
+				<div style="margin-top:12px" class="row">
+					<div>
+						<label style="font-size:13px;color:#9aa4b2">Рендер — исходный HTML</label>
+						<iframe id="origFrame" title="original render"></iframe>
+					</div>
+					<div>
+						<label style="font-size:13px;color:#9aa4b2">Рендер — очищенный HTML</label>
+						<iframe id="cleanFrame" title="clean render"></iframe>
+					</div>
+				</div>
 
-<div style="margin-top:12px" class="row">
-<div>
-<label style="font-size:13px;color:#9aa4b2">Очищенный HTML (raw)</label>
-<textarea id="cleanHtml" readonly></textarea>
-</div>
-<div>
-<label style="font-size:13px;color:#9aa4b2">Лог удалённых / изменённых элементов</label>
-<div id="log" class="log"></div>
-</div>
-</div>
+				<div style="margin-top:12px" class="row">
+					<div>
+						<label style="font-size:13px;color:#9aa4b2">Очищенный HTML (raw)</label>
+						<textarea id="cleanHtml" readonly></textarea>
+					</div>
+					<div>
+						<label style="font-size:13px;color:#9aa4b2">Лог удалённых / изменённых элементов</label>
+						<div id="log" class="log"></div>
+					</div>
+				</div>
+				
+				<div style="margin-top:12px" class="row">
+					<div>
+						<button id="compareBtn" class="btn" title="Показать различия между исходным и очищенным HTML">Сравнить тексты</button>
+						<button id="copyHtmlBtn" class="btn" style="margin-left: auto">Копировать HTML</button>
+						<button id="copyVisualBtn" class="btn">Копировать визуально</button>
+					</div>
+				</div>
 
-<div style="margin-top:12px" class="row">
-<div class="controls">
-  <button id="compareBtn" class="btn">Сравнить тексты</button>
-</div>
+				<div style="margin-top:12px" class="row">
+					<div id="diffResult" class="log hidden">
+						<h3>Результат сравнения:</h3>
+						<pre id="diffOutput"></pre>
+					</div>
+				</div>
+			</div>
 
-<div id="diffResult" class="log hidden">
-  <h3>Результат сравнения:</h3>
-  <pre id="diffOutput"></pre>
-</div>
-</div>
-</div>
+			<footer>Небольшой локальный инструмент — не доверяйте ему 100% для критических задач.</footer>
+		</div>
 
-<footer>Локальный инструмент — вставляйте текст из Word или HTML и очищайте.</footer>
-</div>
+		<script>
+			const pasteDiv=document.getElementById('pasteDiv');
+			const inputEl=document.getElementById('inputHtml');
+			const cleanBtn=document.getElementById('cleanBtn');
+			const prettyBtn=document.getElementById('prettyBtn');
+			const resetBtn=document.getElementById('resetBtn');
+			const origFrame=document.getElementById('origFrame');
+			const cleanFrame=document.getElementById('cleanFrame');
+			const cleanHtmlEl=document.getElementById('cleanHtml');
+			const logEl=document.getElementById('log');
+			const wordMode=document.getElementById('wordMode');
+			const htmlMode=document.getElementById('htmlMode');
 
-<script>
-const pasteDiv=document.getElementById('pasteDiv');
-const inputEl=document.getElementById('inputHtml');
-const cleanBtn=document.getElementById('cleanBtn');
-const prettyBtn=document.getElementById('prettyBtn');
-const resetBtn=document.getElementById('resetBtn');
-const origFrame=document.getElementById('origFrame');
-const cleanFrame=document.getElementById('cleanFrame');
-const cleanHtmlEl=document.getElementById('cleanHtml');
-const logEl=document.getElementById('log');
-const wordMode=document.getElementById('wordMode');
-const htmlMode=document.getElementById('htmlMode');
+			let currentMode='word';
+			document.querySelectorAll('input[name="mode"]').forEach(r=>{
+			  r.addEventListener('change', e=>{
+			    currentMode=e.target.value;
+			    if(currentMode==='word'){wordMode.classList.remove('hidden'); htmlMode.classList.add('hidden');}
+			    else{htmlMode.classList.remove('hidden'); wordMode.classList.add('hidden');}
+			    cleanHtmlEl.value=''; origFrame.srcdoc=''; cleanFrame.srcdoc=''; logEl.innerHTML='';
+			  });
+			});
 
-let currentMode='word';
-document.querySelectorAll('input[name="mode"]').forEach(r=>{
-  r.addEventListener('change', e=>{
-    currentMode=e.target.value;
-    if(currentMode==='word'){wordMode.classList.remove('hidden'); htmlMode.classList.add('hidden');}
-    else{htmlMode.classList.remove('hidden'); wordMode.classList.add('hidden');}
-    cleanHtmlEl.value=''; origFrame.srcdoc=''; cleanFrame.srcdoc=''; logEl.innerHTML='';
-  });
-});
+			const TAG_RULES={
+			b:{replaceWith:"strong"}, strong:{}, em:{replaceWith:"i"}, i:{}, del:{replaceWith:"s"}, s:{},
+			u:{}, center:{replaceWith:"div",keepStyle:{"text-align":"center"}}, div:{}, span:{}, p:{}, br:{}, ul:{}, ol:{}, li:{}, table:{}, tr:{}, td:{}, th:{}
+			};
+			const TAG_ATTRS={div:["style"], span:["style"], p:["style"], strong:[], i:[], s:[], u:[], br:[], ul:[], ol:[], li:[], table:[], tr:[], td:[], th:[]};
+			const GLOBAL_ATTRS=[];
+			const ALLOWED_STYLES=["text-align","font-style","text-decoration","color","background-color","font-family"];
+			const ALLOWED_TEXT_ALIGN=["left","right","center","justify"];
 
-const TAG_RULES={
-b:{replaceWith:"strong"}, strong:{}, em:{replaceWith:"i"}, i:{}, del:{replaceWith:"s"}, s:{},
-u:{}, center:{replaceWith:"div",keepStyle:{"text-align":"center"}}, div:{}, span:{}, p:{}, br:{}, ul:{}, ol:{}, li:{}, table:{}, tr:{}, td:{}, th:{}
-};
-const TAG_ATTRS={div:["style"], span:["style"], p:["style"], strong:[], i:[], s:[], u:[], br:[], ul:[], ol:[], li:[], table:[], tr:[], td:[], th:[]};
-const GLOBAL_ATTRS=[];
-const ALLOWED_STYLES=["text-align","font-style","text-decoration","color","background-color","font-family"];
-const ALLOWED_TEXT_ALIGN=["left","right","center","justify"];
+			function appendLog(text){const d=document.createElement('div');d.textContent=text;logEl.prepend(d);}
+			function setOrigRender(src){origFrame.srcdoc=src;}
+			function setCleanRender(src){cleanFrame.srcdoc=src;}
 
-function appendLog(text){const d=document.createElement('div');d.textContent=text;logEl.prepend(d);}
-function setOrigRender(src){origFrame.srcdoc=src;}
-function setCleanRender(src){cleanFrame.srcdoc=src;}
+			function sanitizeHtml(source){
+			logEl.innerHTML='';
+			const parser=new DOMParser();
+			const doc=parser.parseFromString(source,'text/html');
 
-function sanitizeHtml(source){
-logEl.innerHTML='';
-const parser=new DOMParser();
-const doc=parser.parseFromString(source,'text/html');
+			['script','style','iframe','object','embed','link','meta'].forEach(tag=>{
+			  Array.from(doc.getElementsByTagName(tag)).forEach(el=>{el.parentNode.removeChild(el); appendLog('Removed <'+tag+'>');});
+			});
 
-['script','style','iframe','object','embed','link','meta'].forEach(tag=>{
-  Array.from(doc.getElementsByTagName(tag)).forEach(el=>{el.parentNode.removeChild(el); appendLog('Removed <'+tag+'>');});
-});
+			const walker=doc.createTreeWalker(doc,NodeFilter.SHOW_COMMENT,null,false);
+			let node;
+			while(node=walker.nextNode()){node.parentNode.removeChild(node); appendLog('Removed comment');}
 
-const walker=doc.createTreeWalker(doc,NodeFilter.SHOW_COMMENT,null,false);
-let node;
-while(node=walker.nextNode()){node.parentNode.removeChild(node); appendLog('Removed comment');}
+			Array.from(doc.body.getElementsByTagName('*')).forEach(el=>{
+			  let tag=el.tagName.toLowerCase();
 
-Array.from(doc.body.getElementsByTagName('*')).forEach(el=>{
-  let tag=el.tagName.toLowerCase();
+			  if(/^h[1-6]$/.test(tag)){
+			    const s=doc.createElement('strong'); s.innerHTML=el.innerHTML;
+			    el.parentNode.replaceChild(s,el); appendLog('Converted <'+tag+'> to <strong>'); el=s; tag='strong';
+			  }
 
-  if(/^h[1-6]$/.test(tag)){
-    const s=doc.createElement('strong'); s.innerHTML=el.innerHTML;
-    el.parentNode.replaceChild(s,el); appendLog('Converted <'+tag+'> to <strong>'); el=s; tag='strong';
-  }
+			  if(TAG_RULES[tag] && TAG_RULES[tag].replaceWith){
+			    const newEl=doc.createElement(TAG_RULES[tag].replaceWith);
+			    newEl.innerHTML=el.innerHTML;
+			    el.parentNode.replaceChild(newEl,el);
+			    appendLog('Converted <'+tag+'> to <'+TAG_RULES[tag].replaceWith+'>');
+			    el=newEl; tag=el.tagName.toLowerCase();
+			  } else if(!TAG_RULES[tag]){
+			    while(el.firstChild) el.parentNode.insertBefore(el.firstChild,el);
+			    el.parentNode.removeChild(el);
+			    appendLog('Removed tag <'+tag+'> but kept content');
+			    return;
+			  }
 
-  if(TAG_RULES[tag] && TAG_RULES[tag].replaceWith){
-    const newEl=doc.createElement(TAG_RULES[tag].replaceWith);
-    newEl.innerHTML=el.innerHTML;
-    el.parentNode.replaceChild(newEl,el);
-    appendLog('Converted <'+tag+'> to <'+TAG_RULES[tag].replaceWith+'>');
-    el=newEl; tag=el.tagName.toLowerCase();
-  } else if(!TAG_RULES[tag]){
-    while(el.firstChild) el.parentNode.insertBefore(el.firstChild,el);
-    el.parentNode.removeChild(el);
-    appendLog('Removed tag <'+tag+'> but kept content');
-    return;
-  }
+			  Array.from(el.attributes||[]).forEach(a=>{
+			    const name=a.name.toLowerCase();
+			    if(!["style","data-mce-style"].includes(name)){el.removeAttribute(a.name); appendLog('Removed attribute '+a.name+' on <'+tag+'>');}
+			  });
 
-  Array.from(el.attributes||[]).forEach(a=>{
-    const name=a.name.toLowerCase();
-    if(!["style","data-mce-style"].includes(name)){el.removeAttribute(a.name); appendLog('Removed attribute '+a.name+' on <'+tag+'>');}
-  });
+			  const styleAttr=el.getAttribute('style')||'';
+			  const val=styleAttr.toLowerCase();
 
-  const styleAttr=el.getAttribute('style')||'';
-  const val=styleAttr.toLowerCase();
+			  if(/font-weight\s*:\s*bold/.test(val) && tag!=="strong"){const s=doc.createElement('strong'); s.innerHTML=el.innerHTML; el.parentNode.replaceChild(s,el); appendLog('Converted font-weight:bold to <strong>'); return;}
+			  if(/font-style\s*:\s*italic/.test(val) && tag!=="i"){const i=doc.createElement('i'); i.innerHTML=el.innerHTML; el.parentNode.replaceChild(i,el); appendLog('Converted font-style:italic to <i>'); return;}
+			  if(/text-decoration\s*:\s*line-through/.test(val) && tag!=="s"){const s=doc.createElement('s'); s.innerHTML=el.innerHTML; el.parentNode.replaceChild(s,el); appendLog('Converted line-through to <s>'); return;}
+			  if(/text-decoration\s*:\s*underline/.test(val) && tag!=="u"){const u=doc.createElement('u'); u.innerHTML=el.innerHTML; el.parentNode.replaceChild(u,el); appendLog('Converted underline to <u>'); return;}
 
-  if(/font-weight\s*:\s*bold/.test(val) && tag!=="strong"){const s=doc.createElement('strong'); s.innerHTML=el.innerHTML; el.parentNode.replaceChild(s,el); appendLog('Converted font-weight:bold to <strong>'); return;}
-  if(/font-style\s*:\s*italic/.test(val) && tag!=="i"){const i=doc.createElement('i'); i.innerHTML=el.innerHTML; el.parentNode.replaceChild(i,el); appendLog('Converted font-style:italic to <i>'); return;}
-  if(/text-decoration\s*:\s*line-through/.test(val) && tag!=="s"){const s=doc.createElement('s'); s.innerHTML=el.innerHTML; el.parentNode.replaceChild(s,el); appendLog('Converted line-through to <s>'); return;}
-  if(/text-decoration\s*:\s*underline/.test(val) && tag!=="u"){const u=doc.createElement('u'); u.innerHTML=el.innerHTML; el.parentNode.replaceChild(u,el); appendLog('Converted underline to <u>'); return;}
+			  const styles=styleAttr.split(';').map(s=>s.trim()).filter(Boolean);
+			  const kept=[];
+			  styles.forEach(s=>{
+			    const [prop,value]=s.split(':').map(x=>x.trim());
+			    if(ALLOWED_STYLES.includes(prop.toLowerCase()) && (prop.toLowerCase()!=='text-align' || ALLOWED_TEXT_ALIGN.includes(value.toLowerCase()))){
+			      if(prop.toLowerCase()!=='font-weight') kept.push(prop+': '+value);
+			    }
+			  });
+			  if(kept.length>0){el.setAttribute('style', kept.join('; ')); el.setAttribute('data-mce-style', kept.join('; '));}
+			  else{el.removeAttribute('style'); el.removeAttribute('data-mce-style');}
+			});
 
-  const styles=styleAttr.split(';').map(s=>s.trim()).filter(Boolean);
-  const kept=[];
-  styles.forEach(s=>{
-    const [prop,value]=s.split(':').map(x=>x.trim());
-    if(ALLOWED_STYLES.includes(prop.toLowerCase()) && (prop.toLowerCase()!=='text-align' || ALLOWED_TEXT_ALIGN.includes(value.toLowerCase()))){
-      if(prop.toLowerCase()!=='font-weight') kept.push(prop+': '+value);
-    }
-  });
-  if(kept.length>0){el.setAttribute('style', kept.join('; ')); el.setAttribute('data-mce-style', kept.join('; '));}
-  else{el.removeAttribute('style'); el.removeAttribute('data-mce-style');}
-});
+			const wrapper = document.createElement('div');
+			Array.from(doc.body.childNodes).forEach(n=>wrapper.appendChild(n.cloneNode(true)));
+			return wrapper.innerHTML;
+			}
 
-const wrapper = document.createElement('div');
-Array.from(doc.body.childNodes).forEach(n=>wrapper.appendChild(n.cloneNode(true)));
-return wrapper.innerHTML;
-}
+			function prettyPrint(html){try{const p=new DOMParser();const d=p.parseFromString(html,'text/html');return d.documentElement.outerHTML;}catch(e){return html;}}
 
-function prettyPrint(html){try{const p=new DOMParser();const d=p.parseFromString(html,'text/html');return d.documentElement.outerHTML;}catch(e){return html;}}
+			cleanBtn.addEventListener('click',()=>{
+			  const src=currentMode==='word'?pasteDiv.innerHTML:inputEl.value;
+			  setOrigRender(src);
+			  const cleaned=sanitizeHtml(src);
+			  cleanHtmlEl.value=cleaned;
+			  setCleanRender(cleaned);
+			  compareBtn.click();
+			});
 
-cleanBtn.addEventListener('click',()=>{
-  const src=currentMode==='word'?pasteDiv.innerHTML:inputEl.value;
-  setOrigRender(src);
-  const cleaned=sanitizeHtml(src);
-  cleanHtmlEl.value=cleaned;
-  setCleanRender(cleaned);
-});
+			prettyBtn.addEventListener('click',()=>{
+			  if(currentMode==='word'){pasteDiv.innerHTML=prettyPrint(pasteDiv.innerHTML); setOrigRender(pasteDiv.innerHTML);}
+			  else{inputEl.value=prettyPrint(inputEl.value); setOrigRender(inputEl.value);}
+			});
 
-prettyBtn.addEventListener('click',()=>{
-  if(currentMode==='word'){pasteDiv.innerHTML=prettyPrint(pasteDiv.innerHTML); setOrigRender(pasteDiv.innerHTML);}
-  else{inputEl.value=prettyPrint(inputEl.value); setOrigRender(inputEl.value);}
-});
+			resetBtn.addEventListener('click',()=>{pasteDiv.innerHTML=''; inputEl.value=''; cleanHtmlEl.value=''; origFrame.srcdoc=''; cleanFrame.srcdoc=''; logEl.innerHTML='';});
 
-resetBtn.addEventListener('click',()=>{pasteDiv.innerHTML=''; inputEl.value=''; cleanHtmlEl.value=''; origFrame.srcdoc=''; cleanFrame.srcdoc=''; logEl.innerHTML='';});
+			const copyHtmlBtn=document.getElementById('copyHtmlBtn');
+			const copyVisualBtn=document.getElementById('copyVisualBtn');
 
-const copyHtmlBtn=document.getElementById('copyHtmlBtn');
-const copyVisualBtn=document.getElementById('copyVisualBtn');
+			copyHtmlBtn.addEventListener('click',()=>{
+			  navigator.clipboard.writeText(cleanHtmlEl.value).then(()=>alert('Очищенный HTML скопирован'));
+			});
 
-copyHtmlBtn.addEventListener('click',()=>{
-  navigator.clipboard.writeText(cleanHtmlEl.value).then(()=>alert('Очищенный HTML скопирован'));
-});
+			copyVisualBtn.addEventListener('click',()=>{
+			  // Создаём временный div и клонируем содержимое очищенного iframe
+			  const tempDiv=document.createElement('div');
+			  tempDiv.innerHTML=cleanFrame.contentDocument.body.innerHTML;
+			  tempDiv.style.position='absolute';
+			  tempDiv.style.left='-9999px';
+			  document.body.appendChild(tempDiv);
 
-copyVisualBtn.addEventListener('click',()=>{
-  // Создаём временный div и клонируем содержимое очищенного iframe
-  const tempDiv=document.createElement('div');
-  tempDiv.innerHTML=cleanFrame.contentDocument.body.innerHTML;
-  tempDiv.style.position='absolute';
-  tempDiv.style.left='-9999px';
-  document.body.appendChild(tempDiv);
+			  const range=document.createRange();
+			  range.selectNodeContents(tempDiv);
+			  const sel=window.getSelection();
+			  sel.removeAllRanges();
+			  sel.addRange(range);
 
-  const range=document.createRange();
-  range.selectNodeContents(tempDiv);
-  const sel=window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
+			  try{
+			    document.execCommand('copy');
+			    alert('Визуальный контент скопирован!');
+			  }catch(e){
+			    alert('Ошибка при копировании визуального контента');
+			  }
 
-  try{
-    document.execCommand('copy');
-    alert('Визуальный контент скопирован!');
-  }catch(e){
-    alert('Ошибка при копировании визуального контента');
-  }
+			  sel.removeAllRanges();
+			  document.body.removeChild(tempDiv);
+			});
 
-  sel.removeAllRanges();
-  document.body.removeChild(tempDiv);
-});
+			const compareBtn = document.getElementById('compareBtn');
+			const diffResult = document.getElementById('diffResult');
+			const diffOutput = document.getElementById('diffOutput');
 
-const compareBtn = document.getElementById('compareBtn');
-const diffResult = document.getElementById('diffResult');
-const diffOutput = document.getElementById('diffOutput');
+			compareBtn.addEventListener('click', () => {
+			  // Текст из исходного рендера
+			  const originalText = origFrame.contentDocument.body.innerText;
+			  // Текст из очищенного рендера
+			  const cleanedText = cleanFrame.contentDocument.body.innerText;
 
-compareBtn.addEventListener('click', () => {
-  // Текст из исходного рендера
-  const originalText = origFrame.contentDocument.body.innerText;
-  // Текст из очищенного рендера
-  const cleanedText = cleanFrame.contentDocument.body.innerText;
+			  // Сравнение построчно
+			  const diff = Diff.diffLines(originalText, cleanedText);
 
-  // Сравнение построчно
-  const diff = Diff.diffLines(originalText, cleanedText);
+			  let diffHtml = "";
+			  let origLine = 1;
+			  let cleanLine = 1;
 
-  let diffHtml = "";
-  let origLine = 1;
-  let cleanLine = 1;
+			  diff.forEach(part => {
+			    const lines = part.value.split("\n");
+			    lines.forEach((line, idx) => {
+			      if (!line.trim()) {
+			        if (!part.added) origLine++;
+			        if (!part.removed) cleanLine++;
+			        return;
+			      }
 
-  diff.forEach(part => {
-    const lines = part.value.split("\n");
-    lines.forEach((line, idx) => {
-      if (!line.trim()) {
-        if (!part.added) origLine++;
-        if (!part.removed) cleanLine++;
-        return;
-      }
+			      if (part.added) {
+			        diffHtml += `<div style="color:green">[очищенный ${cleanLine}] + ${line}</div>`;
+			        cleanLine++;
+			      } else if (part.removed) {
+			        diffHtml += `<div style="color:red">[оригинал ${origLine}] - ${line}</div>`;
+			        origLine++;
+			      } else {
+			        origLine++;
+			        cleanLine++;
+			      }
+			    });
+			  });
 
-      if (part.added) {
-        diffHtml += `<div style="color:green">[очищенный ${cleanLine}] + ${line}</div>`;
-        cleanLine++;
-      } else if (part.removed) {
-        diffHtml += `<div style="color:red">[оригинал ${origLine}] - ${line}</div>`;
-        origLine++;
-      } else {
-        origLine++;
-        cleanLine++;
-      }
-    });
-  });
-
-  diffOutput.innerHTML = diffHtml || "<i>Отличий не найдено</i>";
-  diffResult.classList.remove('hidden');
-});
-
-</script>
-</body>
+			  diffOutput.innerHTML = diffHtml || "<i>Отличий не найдено</i>";
+			  diffResult.classList.remove('hidden');
+			});
+		</script>
+	</body>
 </html>
