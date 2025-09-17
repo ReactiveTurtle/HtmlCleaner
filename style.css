@@ -1,0 +1,60 @@
+body{font-family:Inter,Segoe UI,Roboto,Arial;color:#e6eef6;background:#07101a;margin:0;padding:20px;}
+.wrap{max-width:1100px;margin:0 auto;display:grid;gap:16px;}
+header{display:flex;align-items:center;gap:12px;}
+h1{margin:0;font-size:18px;}
+.panel{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.03);padding:12px;border-radius:10px; max-width: inherit;}
+textarea{width:100%;min-height:150px;;background:white;color:black;border:1px solid rgba(0,0,0,0.1);padding:10px;border-radius:6px;font-family:monospace;font-size:13px;resize:vertical;}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.btn{background:#38bdf8;border:none;color:#04202a;padding:10px 12px;border-radius:8px;cursor:pointer;}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;}
+iframe{width:100%;height:320px;border:1px solid rgba(255,255,255,0.04);border-radius:6px;background:white;}
+.log{max-height:120px;overflow:auto;background:#021018;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.03);font-size:13px;color:#9aa4b2;}
+footer{font-size:13px;color:#9aa4b2;margin-top:12px;}
+#pasteDiv{
+	border:1px solid gray;
+	background:white;
+	color:black;
+	overflow-y:auto;
+	overflow-x:hidden;
+	width: 100%
+}
+#pasteDiv, #inputHtml {
+	min-height:300px;
+	max-height:300px;
+	padding:5px;
+}
+.mode-switch{margin-bottom:8px;}
+.hidden{display:none;}
+@media(max-width:900px){.row{grid-template-columns:1fr;}}
+#diffResult {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #f4f4f4;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  height: 500px;
+}
+
+#diffOutput {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+#diffOutput span {
+  font-family: monospace;
+}
+
+/* Button interactions */
+.btn:active{transform:translateY(1px);filter:brightness(0.95);} 
+.btn:focus-visible{outline:2px solid #38bdf8;outline-offset:2px;}
+.btn.is-loading{opacity:.7;pointer-events:none;}
+
+/* Generic loading background for targets (iframes, textarea) */
+.loading{
+	background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='38' height='38' viewBox='0 0 38 38'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg transform='translate(1 1)' stroke='%2338bdf8' stroke-width='2'%3E%3Ccircle stroke-opacity='.3' cx='18' cy='18' r='18'/%3E%3Cpath d='M36 18c0-9.94-8.06-18-18-18'%3E%3CanimateTransform attributeName='transform' type='rotate' from='0 18 18' to='360 18 18' dur='1s' repeatCount='indefinite'/%3E%3C/path%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+	background-repeat:no-repeat;
+	background-position:center center;
+	background-size:32px 32px;
+}
+
+
