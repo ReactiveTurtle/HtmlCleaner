@@ -245,30 +245,45 @@
 			  navigator.clipboard.writeText(cleanHtmlEl.value).then(()=>alert('Очищенный HTML скопирован'));
 			});
 
-			copyVisualBtn.addEventListener('click',()=>{
-			  // Создаём временный div и клонируем содержимое очищенного iframe
-			  const tempDiv=document.createElement('div');
-			  tempDiv.innerHTML=cleanFrame.contentDocument.body.innerHTML;
-			  tempDiv.style.position='absolute';
-			  tempDiv.style.left='-9999px';
-			  document.body.appendChild(tempDiv);
+copyVisualBtn.addEventListener('click', () => {
+  const html = cleanHtmlEl.value;
+  const text = cleanFrame.contentDocument.body.innerText;
 
-			  const range=document.createRange();
-			  range.selectNodeContents(tempDiv);
-			  const sel=window.getSelection();
-			  sel.removeAllRanges();
-			  sel.addRange(range);
+  if (navigator.clipboard && window.ClipboardItem) {
+    const data = {
+      "text/html": new Blob([html], { type: "text/html" }),
+      "text/plain": new Blob([text], { type: "text/plain" })
+    };
 
-			  try{
-			    document.execCommand('copy');
-			    alert('Визуальный контент скопирован!');
-			  }catch(e){
-			    alert('Ошибка при копировании визуального контента');
-			  }
+    navigator.clipboard.write([new ClipboardItem(data)])
+      .then(() => alert("Визуальный контент скопирован!"))
+      .catch(err => {
+        console.error("Ошибка при копировании:", err);
+        alert("Не удалось скопировать контент");
+      });
+  } else {
+    // fallback для старых браузеров
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = html;
+    document.body.appendChild(tempDiv);
 
-			  sel.removeAllRanges();
-			  document.body.removeChild(tempDiv);
-			});
+    const range = document.createRange();
+    range.selectNodeContents(tempDiv);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    try {
+      document.execCommand("copy");
+      alert("Визуальный контент скопирован (fallback)!");
+    } catch (e) {
+      alert("Ошибка при копировании визуального контента");
+    }
+
+    sel.removeAllRanges();
+    document.body.removeChild(tempDiv);
+  }
+});
 
 			const compareBtn = document.getElementById('compareBtn');
 			const diffResult = document.getElementById('diffResult');
