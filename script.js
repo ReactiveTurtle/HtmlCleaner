@@ -1,145 +1,195 @@
-const pasteDiv=document.getElementById('pasteDiv');
-const inputEl=document.getElementById('inputHtml');
-const cleanBtn=document.getElementById('cleanBtn');
-const prettyBtn=document.getElementById('prettyBtn');
-const resetBtn=document.getElementById('resetBtn');
-const origFrame=document.getElementById('origFrame');
-const cleanFrame=document.getElementById('cleanFrame');
-const cleanHtmlEl=document.getElementById('cleanHtml');
-const logEl=document.getElementById('log');
-const wordMode=document.getElementById('wordMode');
-const htmlMode=document.getElementById('htmlMode');
+const pasteDiv = document.getElementById('pasteDiv');
+const inputEl = document.getElementById('inputHtml');
+const cleanBtn = document.getElementById('cleanBtn');
+const prettyBtn = document.getElementById('prettyBtn');
+const resetBtn = document.getElementById('resetBtn');
+const origFrame = document.getElementById('origFrame');
+const cleanFrame = document.getElementById('cleanFrame');
+const cleanHtmlEl = document.getElementById('cleanHtml');
+const logEl = document.getElementById('log');
+const wordMode = document.getElementById('wordMode');
+const htmlMode = document.getElementById('htmlMode');
 
-let currentMode='word';
-document.querySelectorAll('input[name="mode"]').forEach(r=>{
-  r.addEventListener('change', e=>{
-    currentMode=e.target.value;
-    if(currentMode==='word'){wordMode.classList.remove('hidden'); htmlMode.classList.add('hidden');}
-    else{htmlMode.classList.remove('hidden'); wordMode.classList.add('hidden');}
-    cleanHtmlEl.value=''; origFrame.srcdoc=''; cleanFrame.srcdoc=''; logEl.innerHTML='';
+let currentMode = 'word';
+document.querySelectorAll('input[name="mode"]').forEach(r => {
+  r.addEventListener('change', e => {
+    currentMode = e.target.value;
+    if (currentMode === 'word') { wordMode.classList.remove('hidden'); htmlMode.classList.add('hidden'); }
+    else { htmlMode.classList.remove('hidden'); wordMode.classList.add('hidden'); }
+    cleanHtmlEl.value = ''; origFrame.srcdoc = ''; cleanFrame.srcdoc = ''; logEl.innerHTML = '';
   });
 });
 
-const TAG_RULES={
-  b:{replaceWith:"strong"}, strong:{}, em:{replaceWith:"i"}, i:{}, del:{replaceWith:"s"}, s:{},
-  u:{}, center:{replaceWith:"div",keepStyle:{"text-align":"center"}}, div:{}, span:{}, p:{}, br:{}, ul:{}, ol:{}, li:{}, table:{}, tr:{}, td:{}, th:{}
+const SANITIZER_CONFIG = {
+  tags: {
+    b: { replaceWith: "strong", attrs: [], allowedStyles: [] },
+    strong: { attrs: [], allowedStyles: [] },
+    em: { replaceWith: "i", attrs: [], allowedStyles: [] },
+    i: { attrs: [], allowedStyles: [] },
+    del: { replaceWith: "s", attrs: [], allowedStyles: [] },
+    s: { attrs: [], allowedStyles: [] },
+    a: { attrs: ["href", "data-mce-href"], allowedStyles: ["color", "text-decoration"] },
+    u: { attrs: [], allowedStyles: ["text-decoration"] },
+    center: { replaceWith: "div", attrs: [], allowedStyles: [] },
+    div: { attrs: ["style"], allowedStyles: ["text-align", "background-color"] },
+    span: { attrs: ["style", "data-mce-style"], allowedStyles: ["color", "font-family"] },
+    p: { attrs: ["style"], allowedStyles: ["text-align"] },
+    br: { attrs: [], allowedStyles: [] },
+    ul: { attrs: [], allowedStyles: [] },
+    ol: { attrs: [], allowedStyles: [] },
+    li: { attrs: [], allowedStyles: [] },
+    table: { attrs: [], allowedStyles: ["border"] },
+    tr: { attrs: [], allowedStyles: [] },
+    td: { attrs: [], allowedStyles: ["text-align"] },
+    th: { attrs: [], allowedStyles: ["text-align"] }
+  },
+  globalAttrs: ["style", "data-mce-style"],
+  globalAllowedStyles: [
+    "font-style",
+    "text-decoration-line",
+    "color",
+    "background-color",
+    "font-family"
+  ],
+  allowedTextAlign: ["left", "right", "center", "justify"]
 };
-const TAG_ATTRS={div:["style"], span:["style"], p:["style"], strong:[], i:[], s:[], u:[], br:[], ul:[], ol:[], li:[], table:[], tr:[], td:[], th:[]};
-const GLOBAL_ATTRS=[];
-const ALLOWED_STYLES=["text-align","font-style","text-decoration","color","background-color","font-family"];
-const ALLOWED_TEXT_ALIGN=["left","right","center","justify"];
 
-function appendLog(text){const d=document.createElement('div');d.textContent=text;logEl.prepend(d);} 
-function setOrigRender(src){origFrame.srcdoc=src;}
-function setCleanRender(src){cleanFrame.srcdoc=src;}
 
-function sanitizeHtml(source){
-  logEl.innerHTML='';
-  const parser=new DOMParser();
-  const doc=parser.parseFromString(source,'text/html');
+function appendLog(text) { const d = document.createElement('div'); d.textContent = text; logEl.prepend(d); }
+function setOrigRender(src) { origFrame.srcdoc = src; }
+function setCleanRender(src) { cleanFrame.srcdoc = src; }
 
-  ['script','style','iframe','object','embed','link','meta'].forEach(tag=>{
-    Array.from(doc.getElementsByTagName(tag)).forEach(el=>{el.parentNode.removeChild(el); appendLog('Removed <'+tag+'>');});
+function sanitizeHtml(source) {
+  logEl.innerHTML = '';
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(source, 'text/html');
+
+  // 1. Убираем заведомо опасные теги
+  ['script', 'style', 'iframe', 'object', 'embed', 'link', 'meta'].forEach(tag => {
+    doc.querySelectorAll(tag).forEach(el => {
+      el.remove();
+      appendLog(`Removed <${tag}>`);
+    });
   });
 
-  const walker=doc.createTreeWalker(doc,NodeFilter.SHOW_COMMENT,null,false);
+  // 2. Убираем комментарии
+  const walker = doc.createTreeWalker(doc, NodeFilter.SHOW_COMMENT);
   let node;
-  while(node=walker.nextNode()){node.parentNode.removeChild(node); appendLog('Removed comment');}
+  while ((node = walker.nextNode())) {
+    node.remove();
+    appendLog('Removed comment');
+  }
 
-  Array.from(doc.body.getElementsByTagName('*')).forEach(el=>{
-    let tag=el.tagName.toLowerCase();
+  // 3. Проходим по всем элементам
+  doc.body.querySelectorAll('*').forEach(el => {
+    let tag = el.tagName.toLowerCase();
+    let config = SANITIZER_CONFIG.tags[tag];
 
-    if(/^h[1-6]$/.test(tag)){
-      const s=doc.createElement('strong'); s.innerHTML=el.innerHTML;
-      el.parentNode.replaceChild(s,el); appendLog('Converted <'+tag+'> to <strong>'); el=s; tag='strong';
-    }
-
-    if(TAG_RULES[tag] && TAG_RULES[tag].replaceWith){
-      const newEl=doc.createElement(TAG_RULES[tag].replaceWith);
-      newEl.innerHTML=el.innerHTML;
-      el.parentNode.replaceChild(newEl,el);
-      appendLog('Converted <'+tag+'> to <'+TAG_RULES[tag].replaceWith+'>');
-      el=newEl; tag=el.tagName.toLowerCase();
-    } else if(!TAG_RULES[tag]){
-      while(el.firstChild) el.parentNode.insertBefore(el.firstChild,el);
-      el.parentNode.removeChild(el);
-      appendLog('Removed tag <'+tag+'> but kept content');
+    // h1–h6 → strong
+    if (/^h[1-6]$/.test(tag)) {
+      const s = doc.createElement('strong');
+      s.innerHTML = el.innerHTML;
+      el.replaceWith(s);
+      appendLog(`Converted <${tag}> to <strong>`);
       return;
     }
 
-    Array.from(el.attributes||[]).forEach(a=>{
-      const name=a.name.toLowerCase();
-      if(!["style","data-mce-style"].includes(name)){el.removeAttribute(a.name); appendLog('Removed attribute '+a.name+' on <'+tag+'>');}
-    });
+    // Неизвестный тег → раскрываем содержимое
+    if (!config) {
+      el.replaceWith(...el.childNodes);
+      appendLog(`Removed tag <${tag}> but kept content`);
+      return;
+    }
 
-    const styleAttr=el.getAttribute('style')||'';
-    const val=styleAttr.toLowerCase();
+    // Замена по правилу replaceWith
+    if (config.replaceWith) {
+      const newEl = doc.createElement(config.replaceWith);
+      newEl.innerHTML = el.innerHTML;
+      el.replaceWith(newEl);
+      appendLog(`Converted <${tag}> to <${config.replaceWith}>`);
+      el = newEl;
+      tag = el.tagName.toLowerCase();
+      config = SANITIZER_CONFIG.tags[tag];
+    }
 
-    if(/font-weight\s*:\s*bold/.test(val) && tag!=="strong"){const s=doc.createElement('strong'); s.innerHTML=el.innerHTML; el.parentNode.replaceChild(s,el); appendLog('Converted font-weight:bold to <strong>'); return;}
-    if(/font-style\s*:\s*italic/.test(val) && tag!=="i"){const i=doc.createElement('i'); i.innerHTML=el.innerHTML; el.parentNode.replaceChild(i,el); appendLog('Converted font-style:italic to <i>'); return;}
-    if(/text-decoration\s*:\s*line-through/.test(val) && tag!=="s"){const s=doc.createElement('s'); s.innerHTML=el.innerHTML; el.parentNode.replaceChild(s,el); appendLog('Converted line-through to <s>'); return;}
-    if(/text-decoration\s*:\s*underline/.test(val) && tag!=="u"){const u=doc.createElement('u'); u.innerHTML=el.innerHTML; el.parentNode.replaceChild(u,el); appendLog('Converted underline to <u>'); return;}
-
-    const styles=styleAttr.split(';').map(s=>s.trim()).filter(Boolean);
-    const kept=[];
-    styles.forEach(s=>{
-      const [prop,value]=s.split(':').map(x=>x.trim());
-      if(ALLOWED_STYLES.includes(prop.toLowerCase()) && (prop.toLowerCase()!=="text-align" || ALLOWED_TEXT_ALIGN.includes(value.toLowerCase()))){
-        if(prop.toLowerCase()!=="font-weight") kept.push(prop+': '+value);
+    // Атрибуты
+    Array.from(el.attributes).forEach(attr => {
+      const name = attr.name.toLowerCase();
+      if (
+        !config.attrs.includes(name) &&
+        !SANITIZER_CONFIG.globalAttrs.includes(name)
+      ) {
+        el.removeAttribute(attr.name);
+        appendLog(`Removed attribute ${attr.name} on <${tag}>`);
       }
     });
-    if(kept.length>0){el.setAttribute('style', kept.join('; ')); el.setAttribute('data-mce-style', kept.join('; '));}
-    else{el.removeAttribute('style'); el.removeAttribute('data-mce-style');}
+
+    // Стили
+    const style = el.style;
+    const kept = [];
+    for (let i = 0; i < style.length; i++) {
+      const prop = style[i].toLowerCase();
+      const value = style.getPropertyValue(prop).trim().toLowerCase();
+      const allowed =
+        config.allowedStyles.includes(prop) ||
+        SANITIZER_CONFIG.globalAllowedStyles.includes(prop);
+
+      if (allowed) {
+        if (prop === "text-align" && !SANITIZER_CONFIG.allowedTextAlign.includes(value)) continue;
+        if (prop !== "font-weight") kept.push(`${prop}: ${value}`);
+      }
+    }
   });
 
   const wrapper = document.createElement('div');
-  Array.from(doc.body.childNodes).forEach(n=>wrapper.appendChild(n.cloneNode(true)));
+  wrapper.append(...doc.body.childNodes);
   return wrapper.innerHTML;
 }
 
-function prettyPrint(html){try{const p=new DOMParser();const d=p.parseFromString(html,'text/html');return d.documentElement.outerHTML;}catch(e){return html;}}
 
-function withLoading(fn){
+function prettyPrint(html) { try { const p = new DOMParser(); const d = p.parseFromString(html, 'text/html'); return d.documentElement.outerHTML; } catch (e) { return html; } }
+
+function withLoading(fn) {
   cleanBtn.classList.add('is-loading');
-  const targets=[origFrame, cleanFrame, cleanHtmlEl];
-  targets.forEach(t=>t.classList.add('loading'));
+  const targets = [origFrame, cleanFrame, cleanHtmlEl];
+  targets.forEach(t => t.classList.add('loading'));
   // Clear visible content while loading mask shows
-  origFrame.srcdoc='';
-  cleanFrame.srcdoc='';
+  origFrame.srcdoc = '';
+  cleanFrame.srcdoc = '';
   // Keep textarea text, we only mask it
-  setTimeout(()=>{
-    try{ fn(); } finally {
+  setTimeout(() => {
+    try { fn(); } finally {
       cleanBtn.classList.remove('is-loading');
-      targets.forEach(t=>t.classList.remove('loading'));
+      targets.forEach(t => t.classList.remove('loading'));
     }
   }, 300); // slight delay to ensure loader is visible before heavy work
 }
 
-cleanBtn.addEventListener('click',()=>{
-  withLoading(()=>{
-    const src=currentMode==='word'?pasteDiv.innerHTML:inputEl.value;
+cleanBtn.addEventListener('click', () => {
+  withLoading(() => {
+    const src = currentMode === 'word' ? pasteDiv.innerHTML : inputEl.value;
     setOrigRender(src);
-    const cleaned=sanitizeHtml(src);
-    cleanHtmlEl.value=cleaned;
+    const cleaned = sanitizeHtml(src);
+    cleanHtmlEl.value = cleaned;
     setCleanRender(cleaned);
     compareBtn.click();
   });
 });
 
-prettyBtn.addEventListener('click',()=>{
-  const src=currentMode==='word'?pasteDiv.innerHTML:inputEl.value;
-  const pretty=prettyPrint(src);
-  if(currentMode==='word'){pasteDiv.innerHTML=pretty; setOrigRender(pretty);} 
-  else{inputEl.value=pretty; setOrigRender(pretty);} 
+prettyBtn.addEventListener('click', () => {
+  const src = currentMode === 'word' ? pasteDiv.innerHTML : inputEl.value;
+  const pretty = prettyPrint(src);
+  if (currentMode === 'word') { pasteDiv.innerHTML = pretty; setOrigRender(pretty); }
+  else { inputEl.value = pretty; setOrigRender(pretty); }
 });
 
-resetBtn.addEventListener('click',()=>{pasteDiv.innerHTML=''; inputEl.value=''; cleanHtmlEl.value=''; origFrame.srcdoc=''; cleanFrame.srcdoc=''; logEl.innerHTML='';});
+resetBtn.addEventListener('click', () => { pasteDiv.innerHTML = ''; inputEl.value = ''; cleanHtmlEl.value = ''; origFrame.srcdoc = ''; cleanFrame.srcdoc = ''; logEl.innerHTML = ''; });
 
-const copyHtmlBtn=document.getElementById('copyHtmlBtn');
-const copyVisualBtn=document.getElementById('copyVisualBtn');
+const copyHtmlBtn = document.getElementById('copyHtmlBtn');
+const copyVisualBtn = document.getElementById('copyVisualBtn');
 
-copyHtmlBtn.addEventListener('click',()=>{
-  navigator.clipboard.writeText(cleanHtmlEl.value).then(()=>alert('Очищенный HTML скопирован'));
+copyHtmlBtn.addEventListener('click', () => {
+  navigator.clipboard.writeText(cleanHtmlEl.value).then(() => alert('Очищенный HTML скопирован'));
 });
 
 copyVisualBtn.addEventListener('click', () => {
@@ -189,10 +239,10 @@ compareBtn.addEventListener('click', () => {
   // show loader in diff result for ~1s
   diffResult.classList.remove('hidden');
   diffResult.classList.add('loading');
-  diffOutput.innerHTML='';
-  const start=Date.now();
+  diffOutput.innerHTML = '';
+  const start = Date.now();
   // allow paint of loader before heavy work
-  setTimeout(()=>{
+  setTimeout(() => {
     const originalText = origFrame.contentDocument.body.innerText;
     const cleanedText = cleanFrame.contentDocument.body.innerText;
 
@@ -224,9 +274,9 @@ compareBtn.addEventListener('click', () => {
       });
     });
 
-    const elapsed=Date.now()-start;
-    const left=Math.max(0, 1000 - elapsed);
-    setTimeout(()=>{
+    const elapsed = Date.now() - start;
+    const left = Math.max(0, 1000 - elapsed);
+    setTimeout(() => {
       diffOutput.innerHTML = diffHtml || "<i>Отличий не найдено</i>";
       diffResult.classList.remove('loading');
     }, left);
